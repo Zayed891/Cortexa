@@ -13,7 +13,7 @@ export const userAuth: RequestHandler = (req,res,next) =>{
             return;
         }
 
-        const payload = jwt.verify(token as string, JWT_SECRET) ;
+        const payload = jwt.verify(token as string , JWT_SECRET as string) ;
 
         if(!payload){
             res.status(411).json({

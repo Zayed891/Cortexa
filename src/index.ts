@@ -1,18 +1,23 @@
+
 import express, { response } from "express";
 import z from "zod";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { contentModel, userModel } from "./db";
-import { JWT_SECRET } from "./config/config";
+import { JWT_SECRET, MONGO_URL } from "./config/config";
 import { userAuth } from "./auth/auth";
+
+import mongoose from "mongoose";
 
 const app = express();
 
 app.use(express.json());
 
+
+
 app.post('/api/v1/signup', async(req,res)=>{
     const userSchema = z.object({
-        email : z.string().min(3).max(8),
+        email : z.email(),
         password : z.string().min(8).max(20),
         firstName : z.string().min(5).max(10),
         lastName : z.string().min(5).max(10),
@@ -59,7 +64,7 @@ app.post('/api/v1/signup', async(req,res)=>{
 
 app.post("/api/v1/signin" , async(req,res)=>{
     const requiredBody = z.object({
-        email : z.string().min(3).max(10),
+        email : z.email(),
         password : z.string().min(8).max(20),
     })
 
@@ -95,9 +100,9 @@ app.post("/api/v1/signin" , async(req,res)=>{
 
         const authorization = jwt.sign({
             id: user._id,
-        },JWT_SECRET);
+        },JWT_SECRET as string);
 
-        response.status(200).json({
+        res.status(200).json({
             message : "You have successfully signed up!",
             authorization,
         })
@@ -180,7 +185,7 @@ app.delete("/api/v1/content", userAuth, async(req,res)=>{
 
     try{
         const response = await contentModel.deleteMany({
-        contentId,
+        _id : contentId,
         //@ts-ignore
         userId : req.id,
     })
@@ -205,3 +210,18 @@ app.delete("/api/v1/content", userAuth, async(req,res)=>{
 
 
 
+
+
+async function main(){
+    try{
+        await mongoose.connect(MONGO_URL);
+
+        app.listen(3000, ()=>{
+            console.log("Server is running on port 3000");
+        })
+    }catch(e){
+        console.log("Error starting server", e);
+    }
+}
+
+main();
