@@ -11,6 +11,7 @@ const db_1 = require("./db");
 const config_1 = require("./config/config");
 const auth_1 = require("./auth/auth");
 const mongoose_1 = __importDefault(require("mongoose"));
+const utils_1 = require("./utils");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.post('/api/v1/signup', async (req, res) => {
@@ -79,6 +80,7 @@ app.post("/api/v1/signin", async (req, res) => {
             res.status(411).json({
                 message: "Please input the correct credentials",
             });
+            return;
         }
         const authorization = jsonwebtoken_1.default.sign({
             id: user._id,
@@ -171,6 +173,74 @@ app.delete("/api/v1/content", auth_1.userAuth, async (req, res) => {
     catch (e) {
         res.status(500).json({
             message: "Internal Error",
+            error: e,
+        });
+    }
+});
+app.post("/api/v1/brain/share", auth_1.userAuth, async (req, res) => {
+    const isShare = req.body.share;
+    if (isShare === "false") {
+        const reponse = await db_1.linkModel.findOneAndDelete({
+            //@ts-ignore
+            userId: req.id
+        });
+        return res.status(200).json({
+            message: "Deleted the link"
+        });
+    }
+    const link = await db_1.linkModel.findOne({
+        //@ts-ignore
+        userId: req.id
+    });
+    if (link) {
+        res.status(200).json({
+            hash: link.hash
+        });
+        return;
+    }
+    const hash = (0, utils_1.random)(10);
+    await db_1.linkModel.create({
+        hash,
+        //@ts-ignore
+        userId: req.id
+    });
+    res.status(200).json({
+        hash
+    });
+});
+app.get("/api/v1/brain/:shareLink", async (req, res) => {
+    const hash = req.params.shareLink;
+    try {
+        const link = await db_1.linkModel.findOne({
+            hash
+        });
+        if (!link) {
+            res.status(411).json({
+                message: "Incorrect input",
+            });
+            return;
+        }
+        const content = await db_1.contentModel.findOne({
+            userId: link.userId,
+        });
+        const user = await db_1.userModel.findOne({
+            _id: link.userId,
+        });
+        if (!user) {
+            res.status(411).json({
+                message: "User not found, shouldn't happen ideally",
+            });
+            return;
+        }
+        res.status(200).json({
+            content,
+            //@ts-ignore
+            username: user.email,
+        });
+    }
+    catch (e) {
+        res.status(500).json({
+            message: "Sorry! Internal Error",
             error: e,
         });
     }

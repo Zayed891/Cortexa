@@ -96,7 +96,8 @@ app.post("/api/v1/signin", async (req, res) => {
         if (!correctCredentials) {
             res.status(411).json({
                 message: "Please input the correct credentials",
-            })
+            });
+            return;
         }
 
         const authorization = jwt.sign({
@@ -212,49 +213,41 @@ app.delete("/api/v1/content", userAuth, async (req, res) => {
 
 app.post("/api/v1/brain/share", userAuth, async (req, res) => {
     const isShare = req.body.share;
-    try {
-        if (!isShare) {
-            const response = await linkModel.deleteOne({
-                //@ts-ignore
-                userId: req.id,
-            })
 
-            res.status(200).json({
-                message: "Removed the link",
-            })
-            return;
-        }
-
-        const existing = await linkModel.findOne({
+    if(isShare==="false"){
+        const reponse = await linkModel.findOneAndDelete({
             //@ts-ignore
-            userId: req.id,
+            userId : req.id
         })
 
-        if (existing) {
-            res.status(200).json({
-                hash: existing.hash,
-            })
-            return;
-        }
-
-        const hash = random(10);
-
-        await linkModel.create({
-            //@ts-ignore
-            userId: req.id,
-            hash: hash,
-        });
-
-        res.status(200).json({
-            hash
-        });
-    } catch (e) {
-        res.status(500).json({
-            message: "Internal Error",
-            error: e,
+        return res.status(200).json({
+            message : "Deleted the link"
         })
     }
 
+    const link = await linkModel.findOne({
+        //@ts-ignore
+        userId : req.id
+    });
+
+    if(link){
+        res.status(200).json({
+            hash: link.hash
+        });
+        return;
+    }
+
+    const hash = random(10);
+
+    await linkModel.create({
+        hash,
+        //@ts-ignore
+        userId : req.id
+    });
+
+    res.status(200).json({
+        hash
+    })
 });
 
 app.get("/api/v1/brain/:shareLink", async (req, res) => {
@@ -272,11 +265,11 @@ app.get("/api/v1/brain/:shareLink", async (req, res) => {
             return;
         }
 
-        const content = await contentModel.find({
-            _id: link.userId,
+        const content = await contentModel.findOne({
+            userId: link.userId,
         });
 
-        const user = await userModel.find({
+        const user = await userModel.findOne({
             _id: link.userId,
         });
 
