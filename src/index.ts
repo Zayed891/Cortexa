@@ -302,8 +302,6 @@ app.get("/api/v1/brain/:shareLink", async (req, res) => {
 })
 
 
-
-
 async function main() {
     try {
         await mongoose.connect(MONGO_URL);
