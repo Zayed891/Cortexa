@@ -4,7 +4,7 @@ import { JWT_SECRET } from "../config/config";
 
 export const userAuth: RequestHandler = (req,res,next) =>{
     try{
-        const token = req.headers['Authorization'];
+        const token = req.headers['authorization'];
         
         if(!token){
             res.status(411).json({
