@@ -212,42 +212,49 @@ app.delete("/api/v1/content", userAuth, async (req, res) => {
 
 
 app.post("/api/v1/brain/share", userAuth, async (req, res) => {
+
     const isShare = req.body.share;
+    try {
+        if (isShare === "false") {
+            const reponse = await linkModel.findOneAndDelete({
+                //@ts-ignore
+                userId: req.id
+            })
 
-    if(isShare==="false"){
-        const reponse = await linkModel.findOneAndDelete({
+            return res.status(200).json({
+                message: "Deleted the link"
+            })
+        }
+
+        const link = await linkModel.findOne({
             //@ts-ignore
-            userId : req.id
-        })
-
-        return res.status(200).json({
-            message : "Deleted the link"
-        })
-    }
-
-    const link = await linkModel.findOne({
-        //@ts-ignore
-        userId : req.id
-    });
-
-    if(link){
-        res.status(200).json({
-            hash: link.hash
+            userId: req.id
         });
-        return;
+
+        if (link) {
+            res.status(200).json({
+                hash: link.hash
+            });
+            return;
+        }
+
+        const hash = random(10);
+
+        await linkModel.create({
+            hash,
+            //@ts-ignore
+            userId: req.id
+        });
+
+        res.status(200).json({
+            hash
+        })
+    } catch (e) {
+        res.status(500).json({
+            message : "Sorry Internal Error",
+            error : e,   
+        })
     }
-
-    const hash = random(10);
-
-    await linkModel.create({
-        hash,
-        //@ts-ignore
-        userId : req.id
-    });
-
-    res.status(200).json({
-        hash
-    })
 });
 
 app.get("/api/v1/brain/:shareLink", async (req, res) => {
@@ -287,8 +294,8 @@ app.get("/api/v1/brain/:shareLink", async (req, res) => {
         });
     } catch (e) {
         res.status(500).json({
-            message : "Sorry! Internal Error",
-            error : e,
+            message: "Sorry! Internal Error",
+            error: e,
         })
     }
 
