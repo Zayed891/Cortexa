@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import { contentModel, linkModel, userModel } from "./db";
 import { JWT_SECRET, MONGO_URL } from "./config/config";
 import { userAuth } from "./auth/auth";
+import cors from "cors";
 
 import mongoose from "mongoose";
 import { random } from "./utils";
@@ -13,7 +14,7 @@ import { random } from "./utils";
 const app = express();
 
 app.use(express.json());
-
+app.use(cors());
 
 
 app.post('/api/v1/signup', async (req, res) => {
@@ -222,7 +223,7 @@ app.post("/api/v1/brain/share", userAuth, async (req, res) => {
             })
 
             return res.status(200).json({
-                message: "Deleted the link"
+                message: "Deleted the link" 
             })
         }
 
@@ -272,7 +273,7 @@ app.get("/api/v1/brain/:shareLink", async (req, res) => {
             return;
         }
 
-        const content = await contentModel.findOne({
+        const content = await contentModel.find({
             userId: link.userId,
         });
 
